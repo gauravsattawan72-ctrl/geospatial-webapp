@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🌿 Haridwar Urban Development Dashboard</title>
+
+  <style>
+    :root {
+      --bg-dark: #1a3a3a;      /* Dark Greenish Teal */
+      --box-gray: #2d5c5c;     /* Lighter Teal */
+      --accent-teal: #20c997;  /* Bright Teal/Green */
+      --accent-green: #48bf84; /* Soft Green */
+      --text-white: #f4f4f4;   /* Soft White */
+      --text-muted: #a0b8bd;   /* Desaturated Teal/Gray */
+    }
+
+    /* General Styling */
+    *, *::before, *::after { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: 'Times New Roman', Times, serif;
+      background-color: var(--bg-dark);
+      color: var(--text-white);
+      scroll-behavior: smooth;
+    }
+    
+    /* Header */
+    header {
+      text-align: center; 
+      padding: 30px 20px;
+      background: var(--bg-dark);
+      border-bottom: 3px solid var(--accent-teal);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3); 
+      position: relative;
+    }
+    #live-clock {
+        position: absolute; 
+        top: 15px; 
+        right: 20px;
+        font-size: 1.2em;
+        color: var(--accent-teal); 
+        font-weight: bold;
+    }
+    header h1 {
+      font-weight: 700;
+      color: var(--text-white); 
+      letter-spacing: 1px;
+      font-size: 2.5em; 
+      margin: 0;
+    }
+    header p { 
+      color: var(--text-muted); 
+      margin-top: 10px; 
+      font-size: 1.1em; 
+    }
+
+    /* Map Section */
+    .map-section {
+      text-align: center; 
+      margin: 60px auto; 
+      width: 90%;
+      perspective: 1500px;
+    }
+    .map-section h2, .info-section h2 {
+      font-size: 2em; 
+      color: var(--accent-teal);
+      text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+      margin-bottom: 25px; 
+      text-align: center;
+    }
+    .map-container {
+      position: relative; 
+      transition: transform 0.5s ease-out;
+      transform: rotateX(10deg) rotateY(-5deg) scale(0.9);
+      box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+      border-radius: 12px; 
+      border: 2px solid var(--accent-teal);
+    }
+    .map-container:hover { transform: rotateX(0deg) rotateY(0deg) scale(1); }
+    .gee-iframe { 
+      width: 100%; 
+      height: 600px; 
+      border: none; 
+      border-radius: 12px; 
+    }
+    .loader {
+        position: absolute; 
+        top: 50%; 
+        left: 50%;
+        transform: translate(-50%, -50%);
+        border: 8px solid var(--box-gray); 
+        border-top: 8px solid var(--accent-teal);
+        border-radius: 50%; 
+        width: 60px; 
+        height: 60px;
+        animation: spin 1s linear infinite; 
+        z-index: 10;
+    }
+    @keyframes spin {
+        0% { transform: translate(-50%, -50%) rotate(0deg); }
+        100% { transform: translate(-50%, -50%) rotate(360deg); }
+    }
+
+    /* Info Sections Styling */
+    .info-section { padding: 40px 20px; }
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 30px; 
+        max-width: 1200px; 
+        margin: 0 auto;
+    }
+    .info-box {
+        background-color: var(--box-gray); 
+        padding: 30px;
+        border-radius: 8px; 
+        border: 1px solid #4a627a;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .info-box:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        border-color: var(--accent-teal);
+    }
+    .info-box h3 {
+        color: var(--accent-green);
+        margin-top: 0; 
+        margin-bottom: 15px;
+        font-size: 1.4em;
+    }
+    .info-box p, .info-box li { 
+      color: var(--text-muted); 
+      line-height: 1.7; 
+      text-align: left; 
+    }
+    .info-box ul { 
+      padding-left: 20px; 
+      margin: 10px 0 0 0; 
+    }
+    .info-box.full-width { grid-column: 1 / -1; }
+    
+    /* Scenario Modeling Section Styles */
+    .scenario-controls {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 20px;
+        margin-top: 20px;
+    }
+    .slider-group {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+    .slider-group label {
+        flex-basis: 120px;
+        font-weight: bold;
+    }
+    .slider-group input[type="range"] {
+        flex-grow: 1;
+        cursor: pointer;
+    }
+    .slider-group .weight-display {
+        flex-basis: 50px;
+        font-weight: bold;
+        color: var(--accent-teal);
+    }
+    .scenario-result {
+        margin-top: 30px;
+        padding: 20px;
+        background-color: #1a3a3a;
+        border-radius: 8px;
+        text-align: center;
+    }
+    .scenario-result h4 {
+        margin: 0 0 10px 0;
+        color: var(--text-white);
+    }
+    .scenario-result #customUdiScore {
+        font-size: 2.5em;
+        font-weight: bold;
+        color: var(--accent-green);
+    }
+    .target-score-group {
+        display: flex;
+        gap: 15px;
+        align-items: center;
+        margin-top: 25px;
+        padding-top: 25px;
+        border-top: 1px solid #4a627a;
+    }
+    .target-score-group input {
+        padding: 8px;
+        font-size: 1.2em;
+        width: 100px;
+        background: var(--bg-dark);
+        color: var(--text-white);
+        border: 1px solid var(--text-muted);
+        border-radius: 4px;
+    }
+    .target-score-group button {
+        padding: 10px 15px;
+        border-radius: 4px;
+        border: none;
+        background-color: var(--accent-green);
+        color: var(--bg-dark);
+        font-weight: bold;
+        cursor: pointer;
+    }
+
+
+    /* Formula Box Style */
+    .formula-box {
+        background-color: #122c2c;
+        border: 1px solid var(--accent-teal);
+        border-radius: 8px;
+        padding: 25px;
+        margin: 40px auto 0 auto;
+        max-width: 800px;
+        text-align: center;
+        box-shadow: inset 0 0 15px rgba(0,0,0,0.4);
+    }
+    .formula-box h3 {
+        color: var(--text-white);
+        margin: 0 0 15px 0;
+    }
+    .formula-box p {
+        font-family: 'Courier New', Courier, monospace;
+        font-size: 1.3em;
+        color: var(--accent-green);
+        font-weight: bold;
+        background-color: rgba(0,0,0,0.2);
+        padding: 15px;
+        border-radius: 4px;
+    }
+
+    /* Footer */
+    footer {
+      background-color: #122c2c; 
+      color: var(--text-muted);
+      text-align: center; 
+      padding: 20px;
+      font-size: 0.95em; 
+      border-top: 1px solid #4a627a;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <div id="live-clock"></div>
+    <h1>🌿 Haridwar Urban Development Dashboard</h1>
+    <p>Supporting <strong>SDG 11 – Sustainable Cities & Communities</strong></p>
+  </header>
+
+  <section class="map-section">
+    <h2>Interactive Urban Development Map</h2>
+    <div class="map-container">
+      <div id="loader" class="loader"></div>
+      <iframe id="geeApp" src="https://drishty.projects.earthengine.app/view/udicalculation" class="gee-iframe" title="GEE UDI App"></iframe>
+    </div>
+  </section>
+  
+  <section class="info-section">
+      <h2>🔬 Scenario Modeling: Customize Your UDI</h2>
+      <div class="info-grid">
+          <div class="info-box full-width">
+              <p>Adjust the sliders to see how different policy priorities change a location's UDI score. Or, enter a target score and click "Find Weights" to see one combination of priorities that could achieve your goal.</p>
+              
+              <div class="scenario-controls">
+                  <div class="slider-group">
+                      <label for="ndbiSlider">Built-up (NDBI)</label>
+                      <input type="range" id="ndbiSlider" min="0" max="2" value="1" step="0.1">
+                      <span id="ndbiWeight" class="weight-display">1.0x</span>
+                  </div>
+                  <div class="slider-group">
+                      <label for="ndviSlider">Vegetation (NDVI)</label>
+                      <input type="range" id="ndviSlider" min="0" max="2" value="1" step="0.1">
+                      <span id="ndviWeight" class="weight-display">1.0x</span>
+                  </div>
+                  <div class="slider-group">
+                      <label for="lstSlider">Surface Temp (LST)</label>
+                      <input type="range" id="lstSlider" min="0" max="2" value="1" step="0.1">
+                      <span id="lstWeight" class="weight-display">1.0x</span>
+                  </div>
+                  <div class="slider-group">
+                      <label for="popSlider">Population</label>
+                      <input type="range" id="popSlider" min="0" max="2" value="1" step="0.1">
+                      <span id="popWeight" class="weight-display">1.0x</span>
+                  </div>
+                  <div class="slider-group">
+                      <label for="ntlSlider">Nightlights (NTL)</label>
+                      <input type="range" id="ntlSlider" min="0" max="2" value="1" step="0.1">
+                      <span id="ntlWeight" class="weight-display">1.0x</span>
+                  </div>
+              </div>
+              
+              <div class="target-score-group">
+                  <label for="targetUdiInput"><b>Enter Target UDI Score:</b></label>
+                  <input type="number" id="targetUdiInput" step="0.1" value="2.5">
+                  <button id="findWeightsBtn">Find Weights</button>
+              </div>
+
+              <div class="scenario-result">
+                  <h4>Custom UDI Score</h4>
+                  <div id="customUdiScore">0.00</div>
+              </div>
+          </div>
+      </div>
+  </section>
+  
+  <section class="info-section">
+      <h2>How to Use This Dashboard</h2>
+      <div class="info-grid">
+          <div class="info-box">
+              <h3>1. Understand the Context</h3>
+              <p>Review the project's goals in the "Understanding Urbanization" section to see the challenges and solutions this dashboard addresses.</p>
+          </div>
+          <div class="info-box">
+              <h3>2. Learn the Layers</h3>
+              <p>Familiarize yourself with the map layers like LST, NDBI, and NDVI. Each represents a different aspect of urban development.</p>
+          </div>
+          <div class="info-box">
+              <h3>3. Explore the Map</h3>
+              <p>Interact with the main map to see the geographical distribution of the Urban Development Index (UDI) and its component layers across Haridwar.</p>
+          </div>
+      </div>
+  </section>
+  
+  <section class="info-section" style="background-color: var(--box-gray); padding-top: 50px; padding-bottom: 50px;">
+      <h2>Understanding Urbanization in Haridwar</h2>
+      <div class="info-grid">
+          <div class="info-box full-width">
+              <h3>The Challenge</h3>
+              <p>As a key pilgrimage city and industrial hub, Haridwar is experiencing rapid urbanization. This growth presents significant challenges for sustainable planning, resource management, infrastructure development, and environmental health. Monitoring these complex changes is crucial for informed decision-making.</p>
+              <h3 style="margin-top: 25px;">Our Solution</h3>
+              <p>This dashboard provides a data-driven approach to understanding these challenges. By combining multiple satellite and demographic datasets into a single, comprehensive Urban Development Index (UDI), it offers clear, actionable insights into growth patterns, infrastructure gaps, and environmental pressure points, empowering planners to build a more sustainable future.</p>
+          </div>
+      </div>
+  </section>
+
+  <section class="info-section">
+      <h2>Map Layer Information</h2>
+      <div class="info-grid">
+          <div class="info-box">
+              <h3>Final UDI</h3>
+              <p>The Urban Development Index is a composite score that provides a comprehensive measure of urbanization, combining multiple factors into a single, easy-to-understand map.</p>
+          </div>
+          <div class="info-box">
+              <h3>Land Surface Temperature (LST)</h3>
+              <p>Measures the heat emitted from the Earth's surface. Higher temperatures often indicate dense urban areas with less vegetation (urban heat island effect).</p>
+          </div>
+          <div class="info-box">
+              <h3>Population Density (Pop)</h3>
+              <p>Indicates the number of people per unit of area. This layer helps identify residential hotspots and areas with high demand for services and infrastructure.</p>
+          </div>
+          <div class="info-box">
+              <h3>Nightlight Intensity (NTL)</h3>
+              <p>Represents the brightness of nighttime satellite imagery. It serves as a strong proxy for economic activity, infrastructure, and energy consumption.</p>
+          </div>
+          <div class="info-box">
+              <h3>Built-up Index (NDBI)</h3>
+              <p>The Normalized Difference Built-up Index highlights artificial structures like buildings and roads, clearly distinguishing them from other land cover types.</p>
+          </div>
+          <div class="info-box">
+              <h3>Vegetation Index (NDVI)</h3>
+              <p>The Normalized Difference Vegetation Index measures the health and density of green vegetation. Lower values typically correspond to more developed or barren areas.</p>
+          </div>
+      </div>
+      <div class="formula-box">
+        <h3>UDI Calculation Formula</h3>
+        <p>(Pop + LST + NTL + NDBI) - NDVI</p>
+      </div>
+  </section>
+
+  <section class="info-section">
+      <h2>Data & Methodology</h2>
+      <div class="info-grid">
+          <div class="info-box">
+              <h3>Data Sources</h3>
+              <ul>
+                  <li>Landsat 8/9 Surface Reflectance</li>
+                  <li>VIIRS Nighttime Lights</li>
+                  <li>WorldPop Population Density</li>
+                  <li>MODIS Land Surface Temperature</li>
+              </ul>
+          </div>
+          <div class="info-box">
+              <h3>Key Indicators</h3>
+              <ul>
+                  <li>NDVI (Vegetation Health)</li>
+                  <li>NDBI (Built-up Area Index)</li>
+                  <li>LST (Surface Temperature)</li>
+                  <li>Population & Night Lights</li>
+              </ul>
+          </div>
+          <div class="info-box">
+              <h3>Final Index</h3>
+              <p>Each indicator is normalized on a common scale and aggregated using a weighted formula to compute the final UDI, providing a robust and holistic measure of urban development.</p>
+          </div>
+      </div>
+  </section>
+
+  <footer>
+    <p>✨ Team Chanda | Gaurav | Drashti | © 2025 ✨</p>
+  </footer>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+        // --- LIVE CLOCK AND IFRAME LOADER ---
+        const iframe = document.getElementById("geeApp");
+        const loader = document.getElementById("loader");
+        if(iframe) iframe.addEventListener("load", () => { loader.style.display = "none"; });
+
+        const clockElement = document.getElementById('live-clock');
+        function updateClock() {
+            const now = new Date();
+            clockElement.textContent = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // --- SCENARIO MODELING LOGIC ---
+        
+        const baseIndicatorData = {
+            // Note: Data is now a single object, not multiple.
+            // This represents a default or average area for calculation.
+            "default":   { ndbi: 0.75, ndvi: 0.20, lst: 0.70, pop: 0.75, ntl: 0.80 }
+        };
+
+        const customUdiScoreDisplay = document.getElementById('customUdiScore');
+        const targetUdiInput = document.getElementById('targetUdiInput');
+        const findWeightsBtn = document.getElementById('findWeightsBtn');
+        
+        const sliders = {
+            ndbi: document.getElementById('ndbiSlider'),
+            ndvi: document.getElementById('ndviSlider'),
+            lst: document.getElementById('lstSlider'),
+            pop: document.getElementById('popSlider'),
+            ntl: document.getElementById('ntlSlider')
+        };
+
+        const weightDisplays = {
+            ndbi: document.getElementById('ndbiWeight'),
+            ndvi: document.getElementById('ndviWeight'),
+            lst: document.getElementById('lstWeight'),
+            pop: document.getElementById('popWeight'),
+            ntl: document.getElementById('ntlWeight')
+        };
+
+        function calculateCustomUdi() {
+            // Use the single "default" dataset for calculations
+            const baseData = baseIndicatorData["default"];
+            if (!baseData) return;
+
+            const weights = {
+                ndbi: parseFloat(sliders.ndbi.value),
+                ndvi: parseFloat(sliders.ndvi.value),
+                lst: parseFloat(sliders.lst.value),
+                pop: parseFloat(sliders.pop.value),
+                ntl: parseFloat(sliders.ntl.value)
+            };
+            
+            for (const key in weights) {
+                weightDisplays[key].textContent = weights[key].toFixed(1) + 'x';
+            }
+
+            const customScore = 
+                (baseData.pop * weights.pop) +
+                (baseData.lst * weights.lst) +
+                (baseData.ntl * weights.ntl) +
+                (baseData.ndbi * weights.ndbi) -
+                (baseData.ndvi * weights.ndvi);
+
+            customUdiScoreDisplay.textContent = customScore.toFixed(2);
+        }
+        
+        function findWeightsForScore() {
+            const targetScore = parseFloat(targetUdiInput.value);
+            // Use the single "default" dataset
+            const baseData = baseIndicatorData["default"];
+            if (isNaN(targetScore) || !baseData) return;
+
+            const currentNdviWeight = parseFloat(sliders.ndvi.value);
+            const ndviContribution = baseData.ndvi * currentNdviWeight;
+
+            const positiveIndicatorsSum = baseData.ndbi + baseData.lst + baseData.pop + baseData.ntl;
+            if (positiveIndicatorsSum === 0) return;
+
+            let k = (targetScore + ndviContribution) / positiveIndicatorsSum;
+            k = Math.max(0, Math.min(2, k));
+
+            sliders.ndbi.value = k;
+            sliders.lst.value = k;
+            sliders.pop.value = k;
+            sliders.ntl.value = k;
+
+            calculateCustomUdi();
+        }
+
+        // Add event listeners
+        for (const key in sliders) {
+            sliders[key].addEventListener('input', calculateCustomUdi);
+        }
+        findWeightsBtn.addEventListener('click', findWeightsForScore);
+        
+        // Initial calculation on page load
+        calculateCustomUdi();
+    });
+  </script>
+</body>
+</html>
